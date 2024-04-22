@@ -14,49 +14,112 @@ import javax.swing.JTextArea;
  */
 public class PanelPrincipal extends JPanel implements ActionListener {
 
-    // Atributos de la clase (privados)
     private PanelBotones botonera;
     private JTextArea areaTexto;
-    private int tipoOperacion;
 
-    // Constructor
+    private String operador;
+    private Double primerNumero;
+
     public PanelPrincipal() {
         initComponents();
-        tipoOperacion = -1; // No hay operaciones en la calculadora
+        resetearCalculadora();
     }
 
-    // Se inicializan los componentes gráficos y se colocan en el panel
     private void initComponents() {
-        // Creamos el panel de botones
         botonera = new PanelBotones();
-        // Creamos el área de texto
         areaTexto = new JTextArea(10, 50);
         areaTexto.setEditable(false);
         areaTexto.setBackground(Color.white);
 
-        //Establecemos layout del panel principal
         this.setLayout(new BorderLayout());
-        // Colocamos la botonera y el área texto
         this.add(areaTexto, BorderLayout.NORTH);
         this.add(botonera, BorderLayout.SOUTH);
 
-        for (JButton boton : this.botonera.getgrupoBotones()) {
+        for (JButton boton : botonera.getgrupoBotones()) {
             boton.addActionListener(this);
         }
+    }
 
+    private void resetearCalculadora() {
+        operador = "";
+        primerNumero = null;
+        areaTexto.setText("");
     }
 
     @Override
     public void actionPerformed(ActionEvent ae) {
-        // Se obtiene el objeto que desencadena el evento
         Object o = ae.getSource();
-        // Si es un botón
-        if (o instanceof JButton) {
-            System.out.println(((JButton) o).getText());
-            areaTexto.setText(((JButton) o).getText());
-        }
 
-        // RESTO DEL CÓDIGO DE LA LÓGICA DE LA CALCULADORA
+        if (o instanceof JButton) {
+            JButton botonPresionado = (JButton) o;
+            String textoBoton = botonPresionado.getText();
+
+            if (esNumero(textoBoton)) {
+                if (operador.isEmpty()) {
+                    areaTexto.append(textoBoton);
+                } else {
+                    if (primerNumero == null) {
+                        primerNumero = Double.parseDouble(areaTexto.getText());
+                        areaTexto.setText(textoBoton);
+                    } else {
+                        areaTexto.append(textoBoton);
+                    }
+                }
+            } else if (esOperador(textoBoton)) {
+                if (primerNumero == null) {
+                    primerNumero = Double.parseDouble(areaTexto.getText());
+                    operador = textoBoton;
+                    areaTexto.setText("");
+                } else if (!operador.isEmpty()) {
+                    operador = textoBoton;
+                    areaTexto.setText("");
+                }
+            } else if (textoBoton.equals("=")) {
+                if (primerNumero != null && !operador.isEmpty() && !areaTexto.getText().isEmpty()) {
+                    Double segundoNumero = Double.parseDouble(areaTexto.getText());
+                    double resultado = ejecutarOperacion(primerNumero, segundoNumero, operador);
+                    areaTexto.setText(String.valueOf(resultado));
+                    operador = "";
+                    primerNumero = resultado;
+                } else {
+                    System.out.println("Error: Operación incompleta");
+                }
+            } else if (textoBoton.equals("C")) {
+                resetearCalculadora();
+            }
+        }
     }
 
+    private boolean esNumero(String texto) {
+        try {
+            Integer.parseInt(texto);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private boolean esOperador(String texto) {
+        return texto.equals("+") || texto.equals("-") || texto.equals("*") || texto.equals("/");
+    }
+
+    private double ejecutarOperacion(double num1, double num2, String operador) {
+        switch (operador) {
+            case "+":
+                return num1 + num2;
+            case "-":
+                return num1 - num2;
+            case "*":
+                return num1 * num2;
+            case "/":
+                if (num2 == 0) {
+                    System.out.println("Error: No se puede dividir por cero");
+                    return 0;
+                }
+                return num1 / num2;
+            default:
+                System.out.println("Error: Operación no posible");
+                return 0;
+        }
+    }
 }
